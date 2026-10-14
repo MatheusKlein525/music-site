@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Player de Música</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      user-select: none;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+      color: #fff;
+    }
+
+    .cartao-reprodutor {
+      position: relative;
+      width: 360px;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 28px;
+      padding: 24px;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    }
+
+    .barra-superior {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .barra-superior button {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s, transform 0.2s;
+    }
+
+    .barra-superior button:hover {
+      color: #a855f7;
+      transform: scale(1.1);
+    }
+
+    .titulo-reprodutor {
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+
+    .envoltorio-capa {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 12px 25px rgba(0, 0, 0, 0.35);
+      margin-bottom: 20px;
+      background-color: #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    #imagem-capa {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+
+    .cartao-reprodutor.reproduzindo #imagem-capa {
+      transform: scale(1.04);
+    }
+
+    .visualizador-som {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 24px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 4px 8px;
+      border-radius: 12px;
+      backdrop-filter: blur(4px);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .cartao-reprodutor.reproduzindo .visualizador-som {
+      opacity: 1;
+    }
+
+    .visualizador-som span {
+      width: 3px;
+      background: #a855f7;
+      border-radius: 2px;
+      height: 20%;
+    }
+
+    .cartao-reprodutor.reproduzindo .visualizador-som span:nth-child(1) { animation: animar-barra 0.6s ease-in-out infinite alternate; }
+    .cartao-reprodutor.reproduzindo .visualizador-som span:nth-child(2) { animation: animar-barra 0.8s ease-in-out infinite alternate 0.2s; }
+    .cartao-reprodutor.reproduzindo .visualizador-som span:nth-child(3) { animation: animar-barra 0.5s ease-in-out infinite alternate 0.4s; }
+    .cartao-reprodutor.reproduzindo .visualizador-som span:nth-child(4) { animation: animar-barra 0.7s ease-in-out infinite alternate 0.1s; }
+    .cartao-reprodutor.reproduzindo .visualizador-som span:nth-child(5) { animation: animar-barra 0.9s ease-in-out infinite alternate 0.3s; }
+
+    @keyframes animar-barra {
+      0% { height: 15%; }
+      100% { height: 100%; }
+    }
+
+    .informacoes-musica {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    #titulo-musica {
+      font-size: 20px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+
+    #nome-artista {
+      font-size: 14px;
+      color: #94a3b8;
+    }
+
+    .recipiente-progresso {
+      margin-bottom: 20px;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #a855f7;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(168, 85, 247, 0.8);
+      transition: transform 0.1s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+    }
+
+    .informacao-tempo {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 8px;
+    }
+
+    .controles {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .botao-controle-pequeno, .botao-controle-grande {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .botao-controle-pequeno {
+      width: 44px;
+      height: 44px;
+    }
+
+    .botao-controle-grande {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+      border: none;
+      box-shadow: 0 8px 20px rgba(168, 85, 247, 0.4);
+    }
+
+    .botao-controle-pequeno:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .botao-controle-grande:hover {
+      transform: scale(1.08);
+      box-shadow: 0 10px 25px rgba(168, 85, 247, 0.6);
+    }
+
+    .rotulo-passo {
+      font-size: 8px;
+      font-weight: bold;
+      position: absolute;
+      bottom: 4px;
+    }
+
+    .recipiente-volume {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 8px;
+    }
+
+    .recipiente-volume button {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+
+    .gaveta-lista {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(15px);
+      border-radius: 28px;
+      padding: 24px;
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+    }
+
+    .gaveta-lista.aberta {
+      transform: translateY(0);
+    }
+
+    .cabecalho-lista {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .cabecalho-lista button {
+      background: transparent;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .itens-lista {
+      list-style: none;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .itens-lista li {
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-bottom: 6px;
+    }
+
+    .itens-lista li:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .itens-lista li.ativo {
+      background: rgba(168, 85, 247, 0.2);
+      border: 1px solid rgba(168, 85, 247, 0.4);
+    }
+
+    .titulo-item { font-size: 14px; font-weight: 600; }
+    .artista-item { font-size: 12px; color: #94a3b8; }
+    
+    svg { fill: currentColor; }
+
+    #seletor-arquivo-audio {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cartao-reprodutor">
+    <div class="barra-superior">
+      <button id="botao-lista-reproducao">
+        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
+      </button>
+      <span class="titulo-reprodutor">Tocando Agora</span>
+      <button id="botao-favorito">
+        <svg id="icone-favorito" width="20" height="20" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      </button>
+    </div>
+
+    <div class="envoltorio-capa" id="envoltorio-capa" title="Clique para escolher uma música/imagem do seu computador">
+      <img id="imagem-capa" src="Musica Boa.png" alt="Capa da Música">
+      <div class="visualizador-som" id="visualizador-som">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <input type="file" id="seletor-arquivo-audio" accept="audio/*,image/*" multiple>
+
+    <div class="informacoes-musica">
+      <h2 id="titulo-musica">Música Boa</h2>
+      <p id="nome-artista">Artista Desconhecido</p>
+    </div>
+
+    <div class="recipiente-progresso">
+      <input type="range" id="barra-progresso" min="0" max="100" value="0">
+      <div class="informacao-tempo">
+        <span id="tempo-atual">0:00</span>
+        <span id="duracao-total">0:00</span>
+      </div>
+    </div>
+
+    <div class="controles">
+      <button id="botao-anterior" class="botao-controle-pequeno" title="Música Anterior">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+      </button>
+
+      <button id="botao-retroceder" class="botao-controle-pequeno" title="Voltar 10s">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+        <span class="rotulo-passo">10s</span>
+      </button>
+
+      <button id="botao-reproduzir" class="botao-controle-grande" title="Reproduzir / Pausar">
+        <svg id="icone-reproduzir" width="26" height="26" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+
+      <button id="botao-avancar" class="botao-controle-pequeno" title="Avançar 10s">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/></svg>
+        <span class="rotulo-passo">10s</span>
+      </button>
+
+      <button id="botao-proximo" class="botao-controle-pequeno" title="Próxima Música">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+      </button>
+    </div>
+
+    <div class="recipiente-volume">
+      <button id="botao-sem-som">
+        <svg id="icone-volume" width="20" height="20" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+      </button>
+      <input type="range" id="barra-volume" min="0" max="1" step="0.01" value="0.8">
+    </div>
+
+    <div class="gaveta-lista" id="gaveta-lista">
+      <div class="cabecalho-lista">
+        <h3>Minha Lista de Reprodução</h3>
+        <button id="botao-fechar-lista">
+          <svg width="20" height="20" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+      <ul id="itens-lista" class="itens-lista"></ul>
+    </div>
+  </div>
+
+  <audio id="reprodutor-audio"></audio>
+
+  <script>
+    const listaReproducao = [
+      {
+        titulo: "Música Boa",
+        artista: "Artista Desconhecido",
+        capa: "Musica Boa.png",
+        fonte: "Musica Boa.mp3"
+      }
+    ];
+
+    let indiceFaixaAtual = 0;
+    let estaReproduzindo = false;
+    let estaSemSom = false;
+    let volumeAnterior = 0.8;
+
+    const audio = document.getElementById('reprodutor-audio');
+    const cartaoReprodutor = document.querySelector('.cartao-reprodutor');
+    const imagemCapa = document.getElementById('imagem-capa');
+    const envoltorioCapa = document.getElementById('envoltorio-capa');
+    const seletorArquivoAudio = document.getElementById('seletor-arquivo-audio');
+    const tituloMusica = document.getElementById('titulo-musica');
+    const nomeArtista = document.getElementById('nome-artista');
+
+    const botaoReproduzir = document.getElementById('botao-reproduzir');
+    const iconeReproduzir = document.getElementById('icone-reproduzir');
+    const botaoRetroceder = document.getElementById('botao-retroceder');
+    const botaoAvancar = document.getElementById('botao-avancar');
+    const botaoAnterior = document.getElementById('botao-anterior');
+    const botaoProximo = document.getElementById('botao-proximo');
+
+    const barraProgresso = document.getElementById('barra-progresso');
+    const tempoAtualEl = document.getElementById('tempo-atual');
+    const duracaoTotalEl = document.getElementById('duracao-total');
+
+    const barraVolume = document.getElementById('barra-volume');
+    const botaoSemSom = document.getElementById('botao-sem-som');
+    const iconeVolume = document.getElementById('icone-volume');
+
+    const botaoListaReproducao = document.getElementById('botao-lista-reproducao');
+    const botaoFecharLista = document.getElementById('botao-fechar-lista');
+    const gavetaLista = document.getElementById('gaveta-lista');
+    const itensListaEl = document.getElementById('itens-lista');
+    const botaoFavorito = document.getElementById('botao-favorito');
+
+    imagemCapa.onerror = function() {
+      this.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 24 24" fill="%23a855f7"><rect width="100%" height="100%" fill="%231e293b"/><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" fill="%23a855f7"/></svg>';
+    };
+
+    function carregarFaixa(indice) {
+      const faixa = listaReproducao[indice];
+      tituloMusica.textContent = faixa.titulo;
+      nomeArtista.textContent = faixa.artista;
+      imagemCapa.src = faixa.capa;
+      audio.src = faixa.fonte;
+      atualizarEstadoAtivoLista();
+    }
+
+    function reproduzirFaixa() {
+      audio.play().then(() => {
+        estaReproduzindo = true;
+        cartaoReprodutor.classList.add('reproduzindo');
+        iconeReproduzir.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+      }).catch((erro) => {
+        console.error("Erro ao tocar:", erro);
+        alert("Clique no quadrado da capa para escolher uma música (.mp3) do seu computador!");
+        estaReproduzindo = false;
+        cartaoReprodutor.classList.remove('reproduzindo');
+        iconeReproduzir.innerHTML = '<path d="M8 5v14l11-7z"/>';
+      });
+    }
+
+    function pausarFaixa() {
+      estaReproduzindo = false;
+      cartaoReprodutor.classList.remove('reproduzindo');
+      iconeReproduzir.innerHTML = '<path d="M8 5v14l11-7z"/>';
+      audio.pause();
+    }
+
+    function alternarReproducao() {
+      if (estaReproduzindo) {
+        pausarFaixa();
+      } else {
+        reproduzirFaixa();
+      }
+    }
+
+    envoltorioCapa.addEventListener('click', () => {
+      seletorArquivoAudio.click();
+    });
+
+    seletorArquivoAudio.addEventListener('change', (e) => {
+      const arquivos = e.target.files;
+      if (!arquivos.length) return;
+
+      for (let arquivo of arquivos) {
+        if (arquivo.type.startsWith('audio/')) {
+          const urlAudio = URL.createObjectURL(arquivo);
+          const novaFaixa = {
+            titulo: arquivo.name.replace(/\.[^/.]+$/, ""),
+            artista: "Arquivo Local",
+            capa: "Musica Boa.png",
+            fonte: urlAudio
+          };
+          listaReproducao.push(novaFaixa);
+          indiceFaixaAtual = listaReproducao.length - 1;
+          carregarFaixa(indiceFaixaAtual);
+          renderizarLista();
+          reproduzirFaixa();
+        } else if (arquivo.type.startsWith('image/')) {
+          const urlImagem = URL.createObjectURL(arquivo);
+          listaReproducao[indiceFaixaAtual].capa = urlImagem;
+          imagemCapa.src = urlImagem;
+        }
+      }
+    });
+
+    function retroceder10() {
+      audio.currentTime = Math.max(0, audio.currentTime - 10);
+    }
+
+    function avancar10() {
+      audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10);
+    }
+
+    function faixaAnterior() {
+      indiceFaixaAtual = (indiceFaixaAtual - 1 + listaReproducao.length) % listaReproducao.length;
+      carregarFaixa(indiceFaixaAtual);
+      if (estaReproduzindo) reproduzirFaixa();
+    }
+
+    function proximaFaixa() {
+      indiceFaixaAtual = (indiceFaixaAtual + 1) % listaReproducao.length;
+      carregarFaixa(indiceFaixaAtual);
+      if (estaReproduzindo) reproduzirFaixa();
+    }
+
+    function formatarTempo(segundos) {
+      if (isNaN(segundos)) return "0:00";
+      const minutos = Math.floor(segundos / 60);
+      const segs = Math.floor(segundos % 60);
+      return `${minutos}:${segs < 10 ? '0' : ''}${segs}`;
+    }
+
+    function atualizarProgresso() {
+      if (!isNaN(audio.duration) && audio.duration > 0) {
+        const percentualProgresso = (audio.currentTime / audio.duration) * 100;
+        barraProgresso.value = percentualProgresso;
+        tempoAtualEl.textContent = formatarTempo(audio.currentTime);
+        duracaoTotalEl.textContent = formatarTempo(audio.duration);
+
+        barraProgresso.style.background = `linear-gradient(to right, #a855f7 0%, #a855f7 ${percentualProgresso}%, rgba(255, 255, 255, 0.15) ${percentualProgresso}%, rgba(255, 255, 255, 0.15) 100%)`;
+      }
+    }
+
+    function definirProgresso(e) {
+      if (!isNaN(audio.duration) && audio.duration > 0) {
+        const novoTempo = (e.target.value / 100) * audio.duration;
+        audio.currentTime = novoTempo;
+      }
+    }
+
+    function atualizarVolume() {
+      audio.volume = barraVolume.value;
+      if (audio.volume === 0) {
+        iconeVolume.innerHTML = '<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>';
+        estaSemSom = true;
+      } else {
+        iconeVolume.innerHTML = '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>';
+        estaSemSom = false;
+      }
+    }
+
+    function alternarSemSom() {
+      if (estaSemSom) {
+        audio.volume = volumeAnterior;
+        barraVolume.value = volumeAnterior;
+        estaSemSom = false;
+      } else {
+        volumeAnterior = audio.volume;
+        audio.volume = 0;
+        barraVolume.value = 0;
+        estaSemSom = true;
+      }
+      atualizarVolume();
+    }
+
+    function renderizarLista() {
+      itensListaEl.innerHTML = '';
+      listaReproducao.forEach((faixa, indice) => {
+        const li = document.createElement('li');
+        li.className = indice === indiceFaixaAtual ? 'ativo' : '';
+        li.innerHTML = `
+          <div>
+            <div class="titulo-item">${faixa.titulo}</div>
+            <div class="artista-item">${faixa.artista}</div>
+          </div>
+        `;
+        li.addEventListener('click', () => {
+          indiceFaixaAtual = indice;
+          carregarFaixa(indiceFaixaAtual);
+          reproduzirFaixa();
+          gavetaLista.classList.remove('aberta');
+        });
+        itensListaEl.appendChild(li);
+      });
+    }
+
+    function atualizarEstadoAtivoLista() {
+      const itens = itensListaEl.querySelectorAll('li');
+      itens.forEach((item, indice) => {
+        if (indice === indiceFaixaAtual) {
+          item.classList.add('ativo');
+        } else {
+          item.classList.remove('ativo');
+        }
+      });
+    }
+
+    botaoReproduzir.addEventListener('click', alternarReproducao);
+    botaoRetroceder.addEventListener('click', retroceder10);
+    botaoAvancar.addEventListener('click', avancar10);
+    botaoAnterior.addEventListener('click', faixaAnterior);
+    botaoProximo.addEventListener('click', proximaFaixa);
+
+    audio.addEventListener('timeupdate', atualizarProgresso);
+    audio.addEventListener('loadedmetadata', atualizarProgresso);
+    audio.addEventListener('ended', proximaFaixa);
+
+    barraProgresso.addEventListener('input', definirProgresso);
+    barraVolume.addEventListener('input', atualizarVolume);
+    botaoSemSom.addEventListener('click', alternarSemSom);
+
+    botaoListaReproducao.addEventListener('click', () => gavetaLista.classList.add('aberta'));
+    botaoFecharLista.addEventListener('click', () => gavetaLista.classList.remove('aberta'));
+
+    botaoFavorito.addEventListener('click', () => {
+      const icone = document.getElementById('icone-favorito');
+      if (icone.style.fill === 'rgb(236, 72, 153)' || icone.style.fill === '#ec4899') {
+        icone.style.fill = 'currentColor';
+      } else {
+        icone.style.fill = '#ec4899';
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        alternarReproducao();
+      } else if (e.code === 'ArrowRight') {
+        avancar10();
+      } else if (e.code === 'ArrowLeft') {
+        retroceder10();
+      } else if (e.code === 'ArrowUp') {
+        e.preventDefault();
+        barraVolume.value = Math.min(1, parseFloat(barraVolume.value) + 0.05);
+        atualizarVolume();
+      } else if (e.code === 'ArrowDown') {
+        e.preventDefault();
+        barraVolume.value = Math.max(0, parseFloat(barraVolume.value) - 0.05);
+        atualizarVolume();
+      }
+    });
+
+    renderizarLista();
+    carregarFaixa(indiceFaixaAtual);
+    audio.volume = 0.8;
+  </script>
+</body>
+</html>
